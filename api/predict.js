@@ -1,4 +1,3 @@
-
 const axios = require('axios');
 const FormData = require('form-data');
 
@@ -20,9 +19,18 @@ module.exports = async (req, res) => {
     }
 
     try {
+        // Get the file from the request body
+        const file = req.body;
+        if (!file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
         // Create form data for CIFAR-10 API
         const formData = new FormData();
-        formData.append('file', req.body.file);
+        formData.append('file', Buffer.from(file), {
+            filename: 'image.jpg',
+            contentType: 'image/jpeg'
+        });
 
         // Send request to CIFAR-10 API
         const response = await axios.post('https://cifar10-api.onrender.com/predict', formData, {
