@@ -26,9 +26,23 @@ module.exports = async (req, res) => {
     }
 
     try {
-        // Create form data for CIFAR-10 API
-        const formData = new FormData();
-        formData.append('file', req.body.file);
+        // Handle file upload
+        uploadMiddleware(req, res, async (err) => {
+            if (err) {
+                console.error('Multer error:', err);
+                return res.status(400).json({ error: 'Error processing file upload' });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            // Create form data for CIFAR-10 API
+            const formData = new FormData();
+            formData.append('file', req.file.buffer, {
+                filename: req.file.originalname,
+                contentType: req.file.mimetype
+            });
 
             // Send request to CIFAR-10 API
             const response = await axios.post('https://cifar10-api.onrender.com/predict', formData, {
