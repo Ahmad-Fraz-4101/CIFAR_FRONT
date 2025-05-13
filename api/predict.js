@@ -9,7 +9,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const uploadMiddleware = upload.single('file');
 
 // CIFAR-10 API endpoint
-const CIFAR10_API_URL = 'https://cifar10-api.onrender.com/predict';
+const CIFAR10_API_URL = 'https://cifar-production.up.railway.app/predict';
 
 module.exports = async function handler(req, res) {
     // Set CORS headers
