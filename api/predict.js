@@ -9,7 +9,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const uploadMiddleware = upload.single('file');
 
 // CIFAR-10 API endpoint
-const CIFAR10_API_URL = 'https://cifar10-api.onrender.com/api/predict';
+const CIFAR10_API_URL = 'https://cifar10-api.onrender.com/predict';
 
 module.exports = async function handler(req, res) {
     // Set CORS headers
@@ -44,6 +44,11 @@ module.exports = async function handler(req, res) {
 
             try {
                 console.log('Sending request to CIFAR-10 API:', CIFAR10_API_URL);
+                console.log('File details:', {
+                    originalname: req.file.originalname,
+                    mimetype: req.file.mimetype,
+                    size: req.file.size
+                });
                 
                 // Create form data for CIFAR-10 API
                 const formData = new FormData();
@@ -55,8 +60,11 @@ module.exports = async function handler(req, res) {
                 // Send request to CIFAR-10 API
                 const response = await axios.post(CIFAR10_API_URL, formData, {
                     headers: {
-                        ...formData.getHeaders()
-                    }
+                        ...formData.getHeaders(),
+                        'Accept': 'application/json'
+                    },
+                    maxContentLength: Infinity,
+                    maxBodyLength: Infinity
                 });
 
                 console.log('CIFAR-10 API Response:', response.data);
@@ -68,7 +76,8 @@ module.exports = async function handler(req, res) {
                     message: apiError.message,
                     response: apiError.response?.data,
                     status: apiError.response?.status,
-                    url: CIFAR10_API_URL
+                    url: CIFAR10_API_URL,
+                    headers: apiError.config?.headers
                 });
 
                 if (apiError.response) {
