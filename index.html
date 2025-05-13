@@ -405,16 +405,20 @@
             submitBtn.disabled = true;
 
             const formData = new FormData();
-            formData.append('file', file, file.name);
+            formData.append('file', file);
 
             try {
                 const response = await fetch('/api/predict', {
                     method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                    },
                     body: formData
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                 }
 
                 const data = await response.json();

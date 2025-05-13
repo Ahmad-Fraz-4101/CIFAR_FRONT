@@ -5,7 +5,7 @@ module.exports = async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
 
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
@@ -19,27 +19,15 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        // Get the file from the request
-        const file = req.body;
-        console.log('Received request body:', req.body);
-
-        if (!file) {
-            console.error('No file in request body');
+        // Check if we have a file in the request
+        if (!req.body || !req.body.file) {
+            console.error('No file in request');
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
         // Create form data for CIFAR-10 API
         const formData = new FormData();
-        
-        // Convert the file data to a Buffer if it's not already
-        const fileBuffer = Buffer.isBuffer(file) ? file : Buffer.from(file);
-        
-        formData.append('file', fileBuffer, {
-            filename: 'image.jpg',
-            contentType: 'image/jpeg'
-        });
-
-        console.log('Sending request to CIFAR-10 API...');
+        formData.append('file', req.body.file);
 
         // Send request to CIFAR-10 API
         const response = await axios.post('https://cifar10-api.onrender.com/predict', formData, {
@@ -47,8 +35,6 @@ module.exports = async function handler(req, res) {
                 ...formData.getHeaders()
             }
         });
-
-        console.log('Received response from CIFAR-10 API:', response.data);
 
         // Send response back to client
         res.json(response.data);
