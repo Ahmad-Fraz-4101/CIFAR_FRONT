@@ -8,7 +8,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Create a middleware function to handle the file upload
 const uploadMiddleware = upload.single('file');
 
-module.exports = async (req, res) => {
+// Export the serverless function
+module.exports = async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

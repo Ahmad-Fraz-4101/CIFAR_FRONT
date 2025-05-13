@@ -6,7 +6,7 @@
       "use": "@vercel/static"
     },
     {
-      "src": "api/*.js",
+      "src": "api/predict.js",
       "use": "@vercel/node"
     }
   ],
