@@ -13,6 +13,7 @@ module.exports = async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Content-Type', 'application/json');
 
     // Handle preflight requests
     if (req.method === 'OPTIONS') {
@@ -38,39 +39,51 @@ module.exports = async function handler(req, res) {
                 return res.status(400).json({ error: 'No file uploaded' });
             }
 
-            // Create form data for CIFAR-10 API
-            const formData = new FormData();
-            formData.append('file', req.file.buffer, {
-                filename: req.file.originalname,
-                contentType: req.file.mimetype
-            });
+            try {
+                // Create form data for CIFAR-10 API
+                const formData = new FormData();
+                formData.append('file', req.file.buffer, {
+                    filename: req.file.originalname,
+                    contentType: req.file.mimetype
+                });
 
-            // Send request to CIFAR-10 API
-            const response = await axios.post('https://cifar10-api.onrender.com/predict', formData, {
-                headers: {
-                    ...formData.getHeaders()
+                // Send request to CIFAR-10 API
+                const response = await axios.post('https://cifar10-api.onrender.com/predict', formData, {
+                    headers: {
+                        ...formData.getHeaders()
+                    }
+                });
+
+                // Send response back to client
+                return res.json(response.data);
+            } catch (apiError) {
+                console.error('CIFAR-10 API Error:', {
+                    message: apiError.message,
+                    response: apiError.response?.data
+                });
+
+                if (apiError.response) {
+                    return res.status(apiError.response.status).json({
+                        error: 'Error from CIFAR-10 API',
+                        details: apiError.response.data
+                    });
+                } else {
+                    return res.status(500).json({
+                        error: 'Error communicating with CIFAR-10 API',
+                        details: apiError.message
+                    });
                 }
-            });
-
-            // Send response back to client
-            res.json(response.data);
+            }
         });
     } catch (error) {
-        console.error('Error:', {
+        console.error('Server error:', {
             message: error.message,
-            response: error.response?.data
+            stack: error.stack
         });
 
-        if (error.response) {
-            res.status(error.response.status).json({
-                error: 'Error from CIFAR-10 API',
-                details: error.response.data
-            });
-        } else {
-            res.status(500).json({
-                error: 'Error processing request',
-                details: error.message
-            });
-        }
+        return res.status(500).json({
+            error: 'Server error',
+            details: error.message
+        });
     }
 }; 
