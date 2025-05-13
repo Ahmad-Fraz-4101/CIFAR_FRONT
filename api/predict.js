@@ -1,14 +1,6 @@
 const axios = require('axios');
 const FormData = require('form-data');
-const multer = require('multer');
 
-// Configure multer for memory storage
-const upload = multer({ storage: multer.memoryStorage() });
-
-// Create a middleware function to handle the file upload
-const uploadMiddleware = upload.single('file');
-
-// Export the serverless function
 module.exports = async function handler(req, res) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -27,75 +19,32 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        // Handle file upload
-        uploadMiddleware(req, res, async (err) => {
-            if (err) {
-                console.error('Multer error:', err);
-                return res.status(400).json({ error: 'Error processing file upload' });
-            }
+        // Get the file from the request body
+        const file = req.body;
+        if (!file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
 
-            if (!req.file) {
-                console.error('No file received in request');
-                return res.status(400).json({ error: 'No file uploaded' });
-            }
+        // Create form data for CIFAR-10 API
+        const formData = new FormData();
+        formData.append('file', Buffer.from(file), {
+            filename: 'image.jpg',
+            contentType: 'image/jpeg'
+        });
 
-            // Log received file details
-            console.log('Received file:', {
-                originalName: req.file.originalname,
-                mimeType: req.file.mimetype,
-                size: req.file.size
-            });
-
-            // Create form data for CIFAR-10 API
-            const formData = new FormData();
-            formData.append('file', req.file.buffer, {
-                filename: req.file.originalname,
-                contentType: req.file.mimetype
-            });
-
-            // Log the request being sent
-            console.log('Sending request to CIFAR-10 API...');
-
-            try {
-                // Send request to CIFAR-10 API
-                const response = await axios.post('https://cifar10-api.onrender.com/predict', formData, {
-                    headers: {
-                        ...formData.getHeaders()
-                    }
-                });
-
-                // Log the API response
-                console.log('CIFAR-10 API Response:', response.data);
-
-                // Send response back to client
-                res.json(response.data);
-            } catch (apiError) {
-                console.error('CIFAR-10 API Error:', {
-                    message: apiError.message,
-                    response: apiError.response?.data
-                });
-
-                if (apiError.response) {
-                    res.status(apiError.response.status).json({
-                        error: 'Error from CIFAR-10 API',
-                        details: apiError.response.data
-                    });
-                } else {
-                    res.status(500).json({
-                        error: 'Error communicating with CIFAR-10 API',
-                        details: apiError.message
-                    });
-                }
+        // Send request to CIFAR-10 API
+        const response = await axios.post('https://cifar10-api.onrender.com/predict', formData, {
+            headers: {
+                ...formData.getHeaders()
             }
         });
+
+        // Send response back to client
+        res.json(response.data);
     } catch (error) {
-        console.error('Server error:', {
-            message: error.message,
-            stack: error.stack
-        });
-
+        console.error('Error:', error.message);
         res.status(500).json({
-            error: 'Server error',
+            error: 'Error processing request',
             details: error.message
         });
     }

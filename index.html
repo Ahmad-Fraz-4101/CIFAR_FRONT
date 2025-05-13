@@ -405,12 +405,12 @@
             submitBtn.disabled = true;
 
             const formData = new FormData();
-            formData.append('file', file, file.name);
+            formData.append('file', file);
 
             try {
                 const response = await fetch('/api/predict', {
                     method: 'POST',
-                    body: formData
+                    body: file
                 });
 
                 if (!response.ok) {
