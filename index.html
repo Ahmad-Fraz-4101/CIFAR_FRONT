@@ -408,7 +408,7 @@
             formData.append('file', file, file.name);
 
             try {
-                const response = await fetch('https://cifar10-api.onrender.com/predict', {
+                const response = await fetch('/api/predict', {
                     method: 'POST',
                     body: formData
                 });
