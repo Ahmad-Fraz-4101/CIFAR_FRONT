@@ -19,18 +19,27 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-        // Get the file from the request body
+        // Get the file from the request
         const file = req.body;
+        console.log('Received request body:', req.body);
+
         if (!file) {
+            console.error('No file in request body');
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
         // Create form data for CIFAR-10 API
         const formData = new FormData();
-        formData.append('file', Buffer.from(file), {
+        
+        // Convert the file data to a Buffer if it's not already
+        const fileBuffer = Buffer.isBuffer(file) ? file : Buffer.from(file);
+        
+        formData.append('file', fileBuffer, {
             filename: 'image.jpg',
             contentType: 'image/jpeg'
         });
+
+        console.log('Sending request to CIFAR-10 API...');
 
         // Send request to CIFAR-10 API
         const response = await axios.post('https://cifar10-api.onrender.com/predict', formData, {
@@ -39,13 +48,26 @@ module.exports = async function handler(req, res) {
             }
         });
 
+        console.log('Received response from CIFAR-10 API:', response.data);
+
         // Send response back to client
         res.json(response.data);
     } catch (error) {
-        console.error('Error:', error.message);
-        res.status(500).json({
-            error: 'Error processing request',
-            details: error.message
+        console.error('Error:', {
+            message: error.message,
+            response: error.response?.data
         });
+
+        if (error.response) {
+            res.status(error.response.status).json({
+                error: 'Error from CIFAR-10 API',
+                details: error.response.data
+            });
+        } else {
+            res.status(500).json({
+                error: 'Error processing request',
+                details: error.message
+            });
+        }
     }
 }; 
