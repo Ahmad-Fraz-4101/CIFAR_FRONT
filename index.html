@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIFAR-10 Image Classifier</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #50C878;
+            --accent-color: #FF6B6B;
+            --background-color: #F5F7FA;
+            --text-color: #2C3E50;
+            --card-bg: #FFFFFF;
+            --gradient-start: #F5F7FA;
+            --gradient-end: #E4E8F0;
+            --hover-color: #E8F0FE;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            line-height: 1.6;
+            color: var(--text-color);
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            margin-top: 2rem;
+        }
+
+        h1 {
+            font-family: 'Quicksand', sans-serif;
+            color: var(--text-color);
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-family: 'Quicksand', sans-serif;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .instructions-section {
+            background: linear-gradient(135deg, #FFFFFF 0%, var(--gradient-start) 100%);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .instructions-section h2 {
+            color: var(--primary-color);
+        }
+
+        .instructions-list {
+            list-style-type: none;
+        }
+
+        .instructions-list li {
+            margin-bottom: 0.8rem;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--text-color);
+        }
+
+        .instructions-list li:before {
+            content: "•";
+            color: var(--primary-color);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            background: #FFFFFF;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .file-input-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .file-input {
+            width: 100%;
+            padding: 1.5rem;
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .file-input:hover {
+            background-color: var(--hover-color);
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .preview-section {
+            margin-top: 2rem;
+            display: none;
+            background: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .preview-section.active {
+            display: block;
+        }
+
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-box {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #FFFFFF 0%, var(--gradient-start) 100%);
+            display: none;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .result-box.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--gradient-start);
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+
+        .error-message {
+            color: var(--accent-color);
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+            padding: 1rem;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 8px;
+        }
+
+        .classes-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #FFFFFF 0%, var(--gradient-start) 100%);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .classes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .class-item {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .class-item:hover {
+            background: var(--hover-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .contact-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #FFFFFF 0%, var(--gradient-start) 100%);
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .contact-info p {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+
+        .contact-info a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .contact-info a:hover {
+            color: var(--secondary-color);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .submit-btn {
+                width: 100%;
+            }
+
+            .classes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CIFAR-10 Image Classifier</h1>
+        
+        <div class="instructions-section">
+            <h2>How to Use</h2>
+            <ul class="instructions-list">
+                <li>Upload an image of any of the following classes: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, or truck.</li>
+                <li>Make sure the image is clear and the object is the main focus of the picture.</li>
+                <li>Click the "Classify Image" button to get the prediction.</li>
+                <li>The model will show you the predicted class and confidence score.</li>
+            </ul>
+        </div>
+
+        <div class="upload-section">
+            <div class="file-input-container">
+                <input type="file" id="imageInput" class="file-input" accept="image/*">
+            </div>
+            
+            <button id="submitBtn" class="submit-btn" disabled>Classify Image</button>
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <h2>Preview:</h2>
+            <img id="imagePreview" class="image-preview" alt="Preview">
+        </div>
+
+        <div class="loading-spinner" id="loadingSpinner"></div>
+        
+        <div class="result-box" id="resultBox">
+            <h2>Prediction:</h2>
+            <p id="predictionResult"></p>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="classes-section">
+            <h2>CIFAR-10 Classes</h2>
+            <div class="classes-grid">
+                <div class="class-item">airplane</div>
+                <div class="class-item">automobile</div>
+                <div class="class-item">bird</div>
+                <div class="class-item">cat</div>
+                <div class="class-item">deer</div>
+                <div class="class-item">dog</div>
+                <div class="class-item">frog</div>
+                <div class="class-item">horse</div>
+                <div class="class-item">ship</div>
+                <div class="class-item">truck</div>
+            </div>
+        </div>
+
+        <div class="contact-section">
+            <h2>Contact Information</h2>
+            <div class="contact-info">
+                <p><strong>Name:</strong> Ahmad Fraz</p>
+                <p><strong>Roll Number:</strong> 22l-6735</p>
+                <p><strong>Email:</strong> <a href="mailto:l226735@lhr.nu.edu.pk">l226735@lhr.nu.edu.pk</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const previewSection = document.getElementById('previewSection');
+        const imagePreview = document.getElementById('imagePreview');
+        const resultBox = document.getElementById('resultBox');
+        const predictionResult = document.getElementById('predictionResult');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Preview image when selected
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    previewSection.classList.add('active');
+                    submitBtn.disabled = false;
+                    resultBox.classList.remove('active');
+                    errorMessage.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle form submission
+        submitBtn.addEventListener('click', async function() {
+            const file = imageInput.files[0];
+            if (!file) return;
+
+            // Show loading spinner and hide previous results
+            loadingSpinner.style.display = 'block';
+            resultBox.classList.remove('active');
+            errorMessage.style.display = 'none';
+            submitBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', file, file.name);
+
+            try {
+                const response = await fetch('http://localhost:3000/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('API Response:', data);
+
+                // Handle the response based on the actual format
+                if (data.status === 'success' && data.class_name) {
+                    const confidence = (data.confidence * 100).toFixed(2);
+                    predictionResult.textContent = `This image is classified as: ${data.class_name} (Confidence: ${confidence}%)`;
+                    resultBox.classList.add('active');
+                } else {
+                    console.log('Full API Response:', JSON.stringify(data, null, 2));
+                    throw new Error('Unexpected response format from API');
+                }
+            } catch (error) {
+                console.error('Error details:', error);
+                errorMessage.textContent = `Error: ${error.message}. Please check the console for more details.`;
+                errorMessage.style.display = 'block';
+            } finally {
+                loadingSpinner.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html> 
