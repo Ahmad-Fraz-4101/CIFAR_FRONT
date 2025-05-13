@@ -405,14 +405,11 @@
             submitBtn.disabled = true;
 
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', file, file.name);
 
             try {
                 const response = await fetch('/api/predict', {
                     method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                    },
                     body: formData
                 });
 
